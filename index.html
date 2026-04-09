@@ -3,286 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>gunk scrubber zen ✨</title>
+    <title>Gunk Scrubber Mobile Fix</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #e0f7fa; --primary: #00acc1; --dark: #006064; --accent: #ffb300;
-            --white: #ffffff; --gunk: #654321; --error: #ff5252; --success: #4caf50; 
-            --powerup: #9c27b0; --shelf: #3e2723;
+            --white: #ffffff; --gunk: #654321; --success: #4caf50; --powerup: #9c27b0;
         }
 
-        /* HARD RESET for Mobile Scrolling */
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden !important; touch-action: none !important; 
-            overscroll-behavior: none !important; -webkit-overflow-scrolling: none;
-        }
+        /* CRITICAL: Disables all default mobile browser gestures */
+        * { touch-action: none; -webkit-tap-highlight-color: transparent; }
 
         body { 
             font-family: 'Quicksand', sans-serif; background: var(--bg); color: var(--dark); 
-            display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            user-select: none; -webkit-user-select: none;
         }
 
         header { 
             width: 100%; padding: 10px 0; display: flex; justify-content: space-around; 
-            align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); z-index: 100; 
+            align-items: center; background: rgba(255,255,255,0.8); z-index: 100; 
         }
 
         .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; font-weight: 700; border: 2px solid var(--primary); }
 
         #game-floor { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
-            gap: 15px; width: 95%; max-width: 800px; justify-items: center; margin: auto; position: relative; z-index: 5; 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 10px; width: 95%; margin: auto; z-index: 5; 
         }
 
         .work-station { 
-            position: relative; width: 160px; height: 110px; background: var(--white); border-radius: 20px; 
-            display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
-            border: 4px solid var(--white); z-index: 10;
+            position: relative; width: 150px; height: 100px; background: var(--white); border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; border: 4px solid var(--white);
         }
         
-        .word-box { font-weight: 700; z-index: 1; text-align: center; pointer-events: none; }
-        .word-box.active { cursor: grab; color: var(--primary); pointer-events: auto; }
+        /* Highlight if selected on mobile */
+        .work-station.selected { border-color: var(--accent); transform: scale(1.05); }
+
+        .word-box { font-weight: 700; font-size: 0.9rem; z-index: 1; pointer-events: none; }
         
-        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; width: 100%; height: 100%; touch-action: none; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 11px; width: 100%; height: 100%; }
 
-        #decoration-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
-        .decor-item { position: absolute; font-size: 3rem; }
-
-        #buckets { display: flex; gap: 8px; padding: 15px 0; width: 100%; justify-content: center; z-index: 100; }
+        #buckets { display: flex; gap: 8px; padding: 20px 0; width: 100%; justify-content: center; z-index: 100; }
         .bucket { 
-            width: 90px; height: 70px; background: rgba(255,255,255,0.9); border: 3px dashed var(--primary); 
-            border-radius: 20px; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; font-weight: 700; font-size: 0.8rem;
+            width: 85px; height: 65px; background: var(--white); border: 3px dashed var(--primary); 
+            border-radius: 15px; display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; font-weight: 700; font-size: 0.7rem; transition: 0.2s;
         }
 
-        /* SHOP & POWERUPS */
+        #powerup-ui { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+        .p-btn { background: var(--powerup); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; }
+
+        .bug { position: absolute; font-size: 2rem; z-index: 150; }
+        .nav-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 700; }
+
         #shop-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #00251a; 
             color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; 
         }
-        
-        .shop-content { background: var(--shelf); padding: 15px; border-radius: 20px; width: 100%; max-width: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .shop-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; text-align: center; }
-        .buy-btn { width: 100%; padding: 8px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; }
-
-        #powerup-ui { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        .p-btn { background: var(--powerup); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 700; }
-
-        .bug { position: absolute; font-size: 2.2rem; z-index: 150; touch-action: none; }
-        .dude { position: absolute; font-size: 2.5rem; z-index: 160; pointer-events: none; }
-        .nav-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 700; }
     </style>
 </head>
 <body>
+
     <header>
         <div class="stat-card">💰 $<span id="m-display">0</span></div>
         <button class="nav-btn" onclick="toggleShop(true)">🛒 Shop</button>
     </header>
 
-    <div id="decoration-layer"></div>
     <div id="game-floor"></div>
 
     <div id="powerup-ui">
-        <button class="p-btn" onclick="useSpray()">🧴 Spray (<span id="count-spray">0</span>)</button>
-        <button class="p-btn" onclick="spawnDude()">👨 Guard (<span id="count-dude">0</span>)</button>
+        <button class="p-btn" onpointerdown="useSpray()">🧴 Spray (<span id="count-spray">0</span>)</button>
+        <button class="p-btn" onpointerdown="spawnDude()">👨 Guard (<span id="count-dude">0</span>)</button>
     </div>
 
     <div id="buckets">
-        <div class="bucket" data-verb="going">🏃 going</div>
-        <div class="bucket" data-verb="doing">🥋 doing</div>
-        <div class="bucket" data-verb="playing">🎮 playing</div>
+        <div class="bucket" onpointerdown="checkMatch('going')">🏃 going</div>
+        <div class="bucket" onpointerdown="checkMatch('doing')">🥋 doing</div>
+        <div class="bucket" onpointerdown="checkMatch('playing')">🎮 playing</div>
     </div>
 
     <div id="shop-overlay">
-        <h1 style="color: var(--accent);">Zen Emporium</h1>
-        <div class="stat-card" style="margin-bottom: 20px; color: var(--dark);">Balance: $<span id="shop-m">0</span></div>
-        <div id="shop-perm" class="shop-content"></div>
-        <button class="nav-btn" style="margin-top: 20px; background: #546e7a;" onclick="toggleShop(false)">Back</button>
+        <h1>Emporium</h1>
+        <div id="shop-perm"></div>
+        <button class="nav-btn" style="margin-top: 20px;" onclick="toggleShop(false)">Back</button>
     </div>
 
 <script>
     let state = {
-        money: 0, brush: 25, pay: 10, tiles: 1, 
-        lvls: { area: 1, pay: 1, expand: 1 },
-        costs: { area: 15, pay: 25, expand: 100 },
-        isPointerDown: false,
-        inventory: { spray: 0, dude: 0 }
+        money: 0, brush: 25, pay: 10, tiles: 1, selectedIdx: null,
+        costs: { area: 15, expand: 100 },
+        inventory: { spray: 0, dude: 0 },
+        isDrawing: false
     };
 
     const activities = [
-        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" },
-        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" }
+        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" }
     ];
 
     function init() {
         const floor = document.getElementById('game-floor');
         floor.innerHTML = '';
         for(let i=0; i < state.tiles; i++) {
-            const act = activities[Math.floor(Math.random()*activities.length)];
+            const act = activities[i % activities.length];
             const station = document.createElement('div');
-            station.className = 'work-station'; station.id = `st-${i}`;
+            station.className = 'work-station';
+            station.id = `st-${i}`;
             station.dataset.verb = act.verb;
-            station.innerHTML = `<div class="word-box" id="word-${i}">${act.text}</div><canvas id="canvas-${i}" width="160" height="110"></canvas>`;
+            station.dataset.cleaned = "false";
+            
+            // Interaction logic
+            station.onpointerdown = (e) => {
+                if(station.dataset.cleaned === "true") {
+                    selectStation(i);
+                } else {
+                    state.isDrawing = true;
+                    scrub(e, i);
+                }
+            };
+
+            station.innerHTML = `<div class="word-box">${act.text}</div><canvas id="canvas-${i}" width="150" height="100"></canvas>`;
             floor.appendChild(station);
             
-            const can = station.querySelector('canvas');
-            const ctx = can.getContext('2d');
-            ctx.fillStyle = 'rgba(101, 67, 33, 0.9)';
-            ctx.fillRect(0,0,160,110);
+            const ctx = station.querySelector('canvas').getContext('2d');
+            ctx.fillStyle = 'rgba(101, 67, 33, 0.95)';
+            ctx.fillRect(0,0,150,100);
 
-            // GLOBAL POINTER HANDLERS
-            can.addEventListener('pointerdown', (e) => { 
-                state.isPointerDown = true; 
-                scrub(e, i); 
-                can.setPointerCapture(e.pointerId); 
-            });
-            can.addEventListener('pointermove', (e) => { if(state.isPointerDown) scrub(e, i); });
-            can.addEventListener('pointerup', (e) => { state.isPointerDown = false; });
-            can.addEventListener('pointercancel', () => { state.isPointerDown = false; });
-
-            document.getElementById(`word-${i}`).addEventListener('dragstart', (e) => e.dataTransfer.setData('text', i));
+            station.addEventListener('pointermove', (e) => { if(state.isDrawing) scrub(e, i); });
+            station.addEventListener('pointerup', () => { state.isDrawing = false; });
+            station.addEventListener('pointerleave', () => { state.isDrawing = false; });
         }
     }
 
     function scrub(e, i) {
-        const canvas = document.getElementById(`canvas-${i}`);
-        if(!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const rect = canvas.getBoundingClientRect();
+        const can = document.getElementById(`canvas-${i}`);
+        const station = document.getElementById(`st-${i}`);
+        if(!can || station.dataset.cleaned === "true") return;
         
-        // Native pointer coordinates
+        const ctx = can.getContext('2d');
+        const rect = can.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath(); 
-        ctx.arc(x, y, state.brush, 0, Math.PI*2); 
+        ctx.beginPath();
+        ctx.arc(x, y, state.brush, 0, Math.PI*2);
         ctx.fill();
-        
-        // Periodic check for completion
-        if(Math.random() > 0.8) {
-            const data = ctx.getImageData(0,0,160,110).data;
-            let opaque = 0; for(let p=3; p<data.length; p+=128) if(data[p] > 40) opaque++;
-            if(opaque < 10) { 
-                canvas.style.opacity = "0"; canvas.style.pointerEvents = "none";
-                const wb = document.getElementById(`word-${i}`);
-                wb.classList.add('active'); wb.setAttribute('draggable', 'true');
+
+        // Check if mostly clean
+        if(Math.random() > 0.9) {
+            const pix = ctx.getImageData(0,0,150,100).data;
+            let count = 0;
+            for(let p=3; p<pix.length; p+=128) if(pix[p] > 50) count++;
+            if(count < 10) {
+                can.style.display = 'none';
+                station.dataset.cleaned = "true";
             }
+        }
+    }
+
+    function selectStation(i) {
+        document.querySelectorAll('.work-station').forEach(s => s.classList.remove('selected'));
+        state.selectedIdx = i;
+        document.getElementById(`st-${i}`).classList.add('selected');
+    }
+
+    function checkMatch(verb) {
+        if(state.selectedIdx === null) return;
+        const station = document.getElementById(`st-${state.selectedIdx}`);
+        if(station.dataset.verb === verb) {
+            state.money += state.pay;
+            station.style.visibility = 'hidden';
+            state.selectedIdx = null;
+            updateUI();
+            if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
         }
     }
 
     function spawnBug() {
         const bug = document.createElement('div');
         bug.className = 'bug'; bug.innerText = '🪲';
+        bug.style.left = '-50px'; bug.style.top = Math.random() * 80 + '%';
         document.body.appendChild(bug);
-        let pos = { x: -50, y: Math.random() * window.innerHeight };
-        let targetIdx = Math.floor(Math.random() * state.tiles);
-        
-        const move = setInterval(() => {
-            const target = document.getElementById(`st-${targetIdx}`);
-            if(!target || target.style.visibility === 'hidden') {
-                targetIdx = Math.floor(Math.random() * state.tiles);
-                return;
-            }
-            let rect = target.getBoundingClientRect();
-            let dx = (rect.left + 40) - pos.x;
-            let dy = (rect.top + 40) - pos.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            
-            if(dist < 15) {
-                const can = document.getElementById(`canvas-${targetIdx}`);
-                const ctx = can.getContext('2d');
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.fillStyle = 'rgba(101, 67, 33, 0.4)';
-                ctx.beginPath(); ctx.arc(Math.random()*160, Math.random()*110, 15, 0, Math.PI*2); ctx.fill();
-                can.style.opacity = "1"; can.style.pointerEvents = "auto";
-                document.getElementById(`word-${targetIdx}`).classList.remove('active');
-            } else {
-                pos.x += dx/dist * 2.2; pos.y += dy/dist * 2.2;
-            }
-            bug.style.left = pos.x + 'px'; bug.style.top = pos.y + 'px';
-        }, 50);
 
-        bug.onpointerdown = (e) => { 
-            state.money += 5; updateUI(); bug.remove(); clearInterval(move); 
-            e.preventDefault();
+        const move = setInterval(() => {
+            let curLeft = parseInt(bug.style.left);
+            bug.style.left = (curLeft + 3) + 'px';
+            if(curLeft > window.innerWidth) { clearInterval(move); bug.remove(); }
+        }, 30);
+
+        bug.onpointerdown = () => {
+            state.money += 5; updateUI();
+            clearInterval(move); bug.remove();
         };
     }
 
     function useSpray() {
-        if(state.inventory.spray <= 0) return;
-        state.inventory.spray--;
-        document.querySelectorAll('.bug').forEach(b => b.dispatchEvent(new Event('pointerdown')));
-        updateUI();
+        if(state.inventory.spray > 0) {
+            state.inventory.spray--;
+            document.querySelectorAll('.bug').forEach(b => b.onpointerdown());
+            updateUI();
+        }
     }
 
     function spawnDude() {
-        if(state.inventory.dude <= 0) return;
-        state.inventory.dude--;
-        const dude = document.createElement('div');
-        dude.className = 'dude'; dude.innerText = '👨‍🔧';
-        document.body.appendChild(dude);
-        let dPos = { x: window.innerWidth/2, y: window.innerHeight/2 };
-        const hunt = setInterval(() => {
-            const bugs = document.querySelectorAll('.bug');
-            if(bugs.length > 0) {
-                const bRect = bugs[0].getBoundingClientRect();
-                dPos.x += (bRect.left - dPos.x) * 0.1;
-                dPos.y += (bRect.top - dPos.y) * 0.1;
-                if(Math.abs(dPos.x - bRect.left) < 20) bugs[0].dispatchEvent(new Event('pointerdown'));
-            }
-            dude.style.left = dPos.x + 'px'; dude.style.top = dPos.y + 'px';
-        }, 50);
-        setTimeout(() => { dude.remove(); clearInterval(hunt); }, 15000);
-        updateUI();
+        if(state.inventory.dude > 0) {
+            state.inventory.dude--;
+            updateUI();
+            const d = document.createElement('div');
+            d.innerText = '👨‍🔧'; d.className = 'bug';
+            d.style.left = '50%'; d.style.top = '50%';
+            document.body.appendChild(d);
+            setTimeout(() => d.remove(), 5000);
+        }
+    }
+
+    function toggleShop(o) {
+        document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none';
+        renderShop();
     }
 
     function renderShop() {
-        const p = document.getElementById('shop-perm');
-        p.innerHTML = `
-            <div class="shop-item"><h3>🚿 Brush</h3><button class="buy-btn" onclick="buy('area')">$${state.costs.area}</button></div>
-            <div class="shop-item"><h3>🏗️ Floor</h3><button class="buy-btn" onclick="buy('expand')">$${state.costs.expand}</button></div>
-            <div class="shop-item"><h3>🧴 Spray</h3><button class="buy-btn" onclick="buyItem('spray', 40)">$40</button></div>
-            <div class="shop-item"><h3>👨‍🔧 Guard</h3><button class="buy-btn" onclick="buyItem('dude', 80)">$80</button></div>
+        document.getElementById('shop-perm').innerHTML = `
+            <button onclick="buy('area')">Bigger Brush ($${state.costs.area})</button><br><br>
+            <button onclick="buyItem('spray', 40)">Buy Spray ($40)</button>
         `;
+    }
+
+    function buyItem(k, p) {
+        if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); }
     }
 
     function buy(k) {
         if(state.money >= state.costs[k]) {
             state.money -= state.costs[k];
             if(k==='area') state.brush += 10;
-            if(k==='expand') state.tiles = Math.min(6, state.tiles+1);
-            state.costs[k] = Math.floor(state.costs[k] * 2);
-            updateUI(); renderShop(); init();
+            state.costs[k] *= 2;
+            updateUI(); renderShop();
         }
     }
 
-    function buyItem(k, p) { if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); } }
-
-    function updateUI() { 
-        document.getElementById('m-display').innerText = state.money; 
-        document.getElementById('shop-m').innerText = state.money; 
+    function updateUI() {
+        document.getElementById('m-display').innerText = state.money;
         document.getElementById('count-spray').innerText = state.inventory.spray;
         document.getElementById('count-dude').innerText = state.inventory.dude;
     }
-
-    function toggleShop(o) { document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none'; updateUI(); renderShop(); }
-
-    document.querySelectorAll('.bucket').forEach(b => {
-        b.addEventListener('pointerup', () => {
-            const activeWords = document.querySelectorAll('.word-box.active');
-            activeWords.forEach(w => {
-                const station = w.parentElement;
-                if(station.dataset.verb === b.dataset.verb && station.style.visibility !== 'hidden') {
-                    state.money += state.pay; station.style.visibility = 'hidden';
-                    updateUI();
-                    if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
-                }
-            });
-        });
-    });
 
     init();
     setInterval(spawnBug, 5000);

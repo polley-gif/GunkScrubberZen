@@ -12,11 +12,16 @@
             --powerup: #9c27b0; --shelf: #3e2723;
         }
 
+        /* HARD RESET for Mobile Scrolling */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden !important; touch-action: none !important; 
+            overscroll-behavior: none !important; -webkit-overflow-scrolling: none;
+        }
+
         body { 
             font-family: 'Quicksand', sans-serif; background: var(--bg); color: var(--dark); 
-            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; 
-            touch-action: none; /* Crucial for mobile */
-            user-select: none; -webkit-user-select: none;
+            display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
         }
 
         header { 
@@ -24,42 +29,50 @@
             align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); z-index: 100; 
         }
 
-        .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-weight: 700; font-size: 1.2rem; border: 2px solid var(--primary); }
+        .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; font-weight: 700; border: 2px solid var(--primary); }
 
-        #game-floor { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 95%; max-width: 800px; justify-items: center; margin: auto; position: relative; z-index: 5; }
+        #game-floor { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+            gap: 15px; width: 95%; max-width: 800px; justify-items: center; margin: auto; position: relative; z-index: 5; 
+        }
 
-        .work-station { position: relative; width: 180px; height: 120px; background: var(--white); border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border: 4px solid var(--white); z-index: 10; cursor: default; }
+        .work-station { 
+            position: relative; width: 160px; height: 110px; background: var(--white); border-radius: 20px; 
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+            border: 4px solid var(--white); z-index: 10;
+        }
         
-        .word-box { color: var(--dark); font-size: 1rem; font-weight: 700; z-index: 1; text-align: center; pointer-events: none; }
+        .word-box { font-weight: 700; z-index: 1; text-align: center; pointer-events: none; }
         .word-box.active { cursor: grab; color: var(--primary); pointer-events: auto; }
         
-        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; cursor: crosshair; touch-action: none; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; width: 100%; height: 100%; touch-action: none; }
 
         #decoration-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
-        .decor-item { position: absolute; font-size: 3rem; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1)); }
+        .decor-item { position: absolute; font-size: 3rem; }
 
-        #buckets { display: flex; gap: 8px; padding: 15px 0; width: 100%; justify-content: center; z-index: 100; flex-wrap: wrap; }
-        .bucket { width: 100px; height: 70px; background: rgba(255,255,255,0.9); border: 3px dashed var(--primary); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
-        .bucket.hover { background: #b2ebf2; transform: scale(1.05); }
+        #buckets { display: flex; gap: 8px; padding: 15px 0; width: 100%; justify-content: center; z-index: 100; }
+        .bucket { 
+            width: 90px; height: 70px; background: rgba(255,255,255,0.9); border: 3px dashed var(--primary); 
+            border-radius: 20px; display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; font-weight: 700; font-size: 0.8rem;
+        }
 
-        #shop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; animation: pulseGreen 8s infinite; color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        @keyframes pulseGreen { 0%, 100% { background: #00251a; } 50% { background: #004d40; } }
+        /* SHOP & POWERUPS */
+        #shop-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #00251a; 
+            color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; 
+        }
         
-        .tab-container { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { padding: 10px 12px; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.8rem; }
-        .tab-btn.active { background: var(--accent); color: var(--dark); }
-        
-        .shop-content { background: var(--shelf); padding: 15px; border-radius: 0 0 20px 20px; width: 100%; max-width: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-content { background: var(--shelf); padding: 15px; border-radius: 20px; width: 100%; max-width: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .shop-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; text-align: center; }
-        .buy-btn { width: 100%; padding: 8px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
-        .buy-btn:disabled { background: #555; opacity: 0.5; }
+        .buy-btn { width: 100%; padding: 8px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; }
 
-        .bug { position: absolute; font-size: 2.2rem; z-index: 150; cursor: pointer; }
-        .dude { position: absolute; font-size: 2.5rem; z-index: 160; pointer-events: none; }
-        .nav-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-weight: 700; }
-        
         #powerup-ui { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        .p-btn { background: var(--powerup); color: white; border: none; padding: 8px 12px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 0 #6a1b9a; font-size: 0.8rem; }
+        .p-btn { background: var(--powerup); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 700; }
+
+        .bug { position: absolute; font-size: 2.2rem; z-index: 150; touch-action: none; }
+        .dude { position: absolute; font-size: 2.5rem; z-index: 160; pointer-events: none; }
+        .nav-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -72,8 +85,8 @@
     <div id="game-floor"></div>
 
     <div id="powerup-ui">
-        <button class="p-btn" id="btn-spray" onclick="useSpray()">🧴 Spray (0)</button>
-        <button class="p-btn" id="btn-dude" onclick="spawnDude()">👨 Guard (0)</button>
+        <button class="p-btn" onclick="useSpray()">🧴 Spray (<span id="count-spray">0</span>)</button>
+        <button class="p-btn" onclick="spawnDude()">👨 Guard (<span id="count-dude">0</span>)</button>
     </div>
 
     <div id="buckets">
@@ -83,33 +96,24 @@
     </div>
 
     <div id="shop-overlay">
-        <h1 style="color: var(--accent); font-size: 1.5rem;">Zen Emporium</h1>
-        <div class="stat-card" style="margin-bottom: 10px; color: var(--dark); font-size: 1rem;">Balance: $<span id="shop-m">0</span></div>
-        <div class="tab-container">
-            <button class="tab-btn active" onclick="showTab('perm')">🛠️ Upgrades</button>
-            <button class="tab-btn" onclick="showTab('power')">⚡ Powerups</button>
-            <button class="tab-btn" onclick="showTab('cosmo')">✨ Cosmetics</button>
-        </div>
+        <h1 style="color: var(--accent);">Zen Emporium</h1>
+        <div class="stat-card" style="margin-bottom: 20px; color: var(--dark);">Balance: $<span id="shop-m">0</span></div>
         <div id="shop-perm" class="shop-content"></div>
-        <div id="shop-power" class="shop-content" style="display:none"></div>
-        <div id="shop-cosmo" class="shop-content" style="display:none"></div>
         <button class="nav-btn" style="margin-top: 20px; background: #546e7a;" onclick="toggleShop(false)">Back</button>
     </div>
 
 <script>
     let state = {
-        money: 0, brush: 24, pay: 10, tiles: 1, 
-        lvls: { area: 1, pay: 1, expand: 1, soap: 1 },
-        costs: { area: 15, pay: 25, expand: 100, soap: 50 },
-        isDown: false, gunkColor: 'rgba(101, 67, 33, 0.9)', 
-        inventory: { spray: 0, dude: 0 },
-        bugTimer: 6000
+        money: 0, brush: 25, pay: 10, tiles: 1, 
+        lvls: { area: 1, pay: 1, expand: 1 },
+        costs: { area: 15, pay: 25, expand: 100 },
+        isPointerDown: false,
+        inventory: { spray: 0, dude: 0 }
     };
 
     const activities = [
         { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" },
-        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" },
-        { text: "cycling 🚲", verb: "going" }, { text: "pottery 🏺", verb: "doing" }, { text: "piano 🎹", verb: "playing" }
+        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" }
     ];
 
     function init() {
@@ -120,42 +124,35 @@
             const station = document.createElement('div');
             station.className = 'work-station'; station.id = `st-${i}`;
             station.dataset.verb = act.verb;
-            station.innerHTML = `<div class="word-box" id="word-${i}">${act.text}</div><canvas id="canvas-${i}" width="180" height="120"></canvas>`;
+            station.innerHTML = `<div class="word-box" id="word-${i}">${act.text}</div><canvas id="canvas-${i}" width="160" height="110"></canvas>`;
             floor.appendChild(station);
             
             const can = station.querySelector('canvas');
             const ctx = can.getContext('2d');
-            ctx.fillStyle = state.gunkColor;
-            ctx.fillRect(0,0,180,120);
+            ctx.fillStyle = 'rgba(101, 67, 33, 0.9)';
+            ctx.fillRect(0,0,160,110);
 
-            // MOUSE EVENTS
-            can.addEventListener('mousedown', (e) => { state.isDown = true; scrub(e, i); });
-            can.addEventListener('mousemove', (e) => scrub(e, i));
-            
-            // TOUCH EVENTS
-            can.addEventListener('touchstart', (e) => { 
-                state.isDown = true; 
-                scrub(e.touches[0], i); 
-                e.preventDefault(); 
-            }, {passive: false});
-            can.addEventListener('touchmove', (e) => { 
-                scrub(e.touches[0], i); 
-                e.preventDefault(); 
-            }, {passive: false});
-            can.addEventListener('touchend', () => { state.isDown = false; });
+            // GLOBAL POINTER HANDLERS
+            can.addEventListener('pointerdown', (e) => { 
+                state.isPointerDown = true; 
+                scrub(e, i); 
+                can.setPointerCapture(e.pointerId); 
+            });
+            can.addEventListener('pointermove', (e) => { if(state.isPointerDown) scrub(e, i); });
+            can.addEventListener('pointerup', (e) => { state.isPointerDown = false; });
+            can.addEventListener('pointercancel', () => { state.isPointerDown = false; });
 
             document.getElementById(`word-${i}`).addEventListener('dragstart', (e) => e.dataTransfer.setData('text', i));
         }
     }
 
     function scrub(e, i) {
-        if(!state.isDown) return;
         const canvas = document.getElementById(`canvas-${i}`);
         if(!canvas) return;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
         
-        // Accurate coordinate mapping for touch/mouse
+        // Native pointer coordinates
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
@@ -164,10 +161,11 @@
         ctx.arc(x, y, state.brush, 0, Math.PI*2); 
         ctx.fill();
         
+        // Periodic check for completion
         if(Math.random() > 0.8) {
-            const data = ctx.getImageData(0,0,180,120).data;
-            let opaque = 0; for(let p=3; p<data.length; p+=256) if(data[p] > 40) opaque++;
-            if(opaque < 12) { 
+            const data = ctx.getImageData(0,0,160,110).data;
+            let opaque = 0; for(let p=3; p<data.length; p+=128) if(data[p] > 40) opaque++;
+            if(opaque < 10) { 
                 canvas.style.opacity = "0"; canvas.style.pointerEvents = "none";
                 const wb = document.getElementById(`word-${i}`);
                 wb.classList.add('active'); wb.setAttribute('draggable', 'true');
@@ -197,33 +195,26 @@
                 const can = document.getElementById(`canvas-${targetIdx}`);
                 const ctx = can.getContext('2d');
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.fillStyle = state.gunkColor.replace('0.9', '0.5');
-                ctx.beginPath(); ctx.arc(Math.random()*180, Math.random()*120, 20, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'rgba(101, 67, 33, 0.4)';
+                ctx.beginPath(); ctx.arc(Math.random()*160, Math.random()*110, 15, 0, Math.PI*2); ctx.fill();
                 can.style.opacity = "1"; can.style.pointerEvents = "auto";
                 document.getElementById(`word-${targetIdx}`).classList.remove('active');
             } else {
-                pos.x += dx/dist * 2.5; pos.y += dy/dist * 2.5;
+                pos.x += dx/dist * 2.2; pos.y += dy/dist * 2.2;
             }
             bug.style.left = pos.x + 'px'; bug.style.top = pos.y + 'px';
         }, 50);
 
-        const killFunc = () => { state.money += 5; updateUI(); bug.remove(); clearInterval(move); };
-        bug.onclick = killFunc;
-        bug.ontouchstart = (e) => { killFunc(); e.preventDefault(); };
-        bug.dataset.interval = move;
-    }
-
-    function runBugSpawner() {
-        spawnBug();
-        let nextInterval = Math.max(2000, state.bugTimer - (state.lvls.expand * 400));
-        if(state.money > 1000 && Math.random() > 0.5) setTimeout(spawnBug, 1000);
-        setTimeout(runBugSpawner, nextInterval);
+        bug.onpointerdown = (e) => { 
+            state.money += 5; updateUI(); bug.remove(); clearInterval(move); 
+            e.preventDefault();
+        };
     }
 
     function useSpray() {
         if(state.inventory.spray <= 0) return;
         state.inventory.spray--;
-        document.querySelectorAll('.bug').forEach(b => b.click());
+        document.querySelectorAll('.bug').forEach(b => b.dispatchEvent(new Event('pointerdown')));
         updateUI();
     }
 
@@ -238,86 +229,49 @@
             const bugs = document.querySelectorAll('.bug');
             if(bugs.length > 0) {
                 const bRect = bugs[0].getBoundingClientRect();
-                dPos.x += (bRect.left - dPos.x) * 0.15;
-                dPos.y += (bRect.top - dPos.y) * 0.15;
-                if(Math.abs(dPos.x - bRect.left) < 30) bugs[0].click();
-            } else {
-                dPos.y += Math.sin(Date.now()/300) * 3;
+                dPos.x += (bRect.left - dPos.x) * 0.1;
+                dPos.y += (bRect.top - dPos.y) * 0.1;
+                if(Math.abs(dPos.x - bRect.left) < 20) bugs[0].dispatchEvent(new Event('pointerdown'));
             }
             dude.style.left = dPos.x + 'px'; dude.style.top = dPos.y + 'px';
-        }, 40);
-        setTimeout(() => { dude.remove(); clearInterval(hunt); }, 20000);
+        }, 50);
+        setTimeout(() => { dude.remove(); clearInterval(hunt); }, 15000);
         updateUI();
-    }
-
-    function showTab(t) {
-        document.querySelectorAll('.shop-content').forEach(c => c.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('shop-' + t).style.display = 'grid';
-        event.currentTarget.classList.add('active');
-        renderShop();
     }
 
     function renderShop() {
         const p = document.getElementById('shop-perm');
-        p.innerHTML = `${shopItem('🚿 Nozzle', 'area')}${shopItem('💎 Pay', 'pay')}${shopItem('🧼 Soap', 'soap')}${shopItem('🏗️ Floor', 'expand')}`;
-        const pw = document.getElementById('shop-power');
-        pw.innerHTML = `<div class="shop-item"><h3>🧴 Spray</h3><button class="buy-btn" onclick="buyPower('spray', 40)">$40</button></div><div class="shop-item"><h3>👨‍🔧 Guard</h3><button class="buy-btn" onclick="buyPower('dude', 80)">$80</button></div>`;
-        const c = document.getElementById('shop-cosmo');
-        c.innerHTML = `<div class="shop-item"><h3>🪴 Bonsai</h3><button class="buy-btn" onclick="buyCos('🪴', 150, false)">$150</button></div><div class="shop-item"><h3>🐠 Tank</h3><button class="buy-btn" onclick="buyCos('🐠', 300, false)">$300</button></div><div class="shop-item"><h3>🌸 Sakura</h3><button class="buy-btn" onclick="buyCos('#ffd1dc', 200, true)">$200</button></div>`;
-    }
-
-    function shopItem(n, k) {
-        return `<div class="shop-item"><h3>${n}</h3><p>Lvl ${state.lvls[k]}</p><button class="buy-btn" ${state.money < state.costs[k] ? 'disabled' : ''} onclick="buy('${k}')">$${state.costs[k]}</button></div>`;
+        p.innerHTML = `
+            <div class="shop-item"><h3>🚿 Brush</h3><button class="buy-btn" onclick="buy('area')">$${state.costs.area}</button></div>
+            <div class="shop-item"><h3>🏗️ Floor</h3><button class="buy-btn" onclick="buy('expand')">$${state.costs.expand}</button></div>
+            <div class="shop-item"><h3>🧴 Spray</h3><button class="buy-btn" onclick="buyItem('spray', 40)">$40</button></div>
+            <div class="shop-item"><h3>👨‍🔧 Guard</h3><button class="buy-btn" onclick="buyItem('dude', 80)">$80</button></div>
+        `;
     }
 
     function buy(k) {
         if(state.money >= state.costs[k]) {
-            state.money -= state.costs[k]; state.lvls[k]++;
-            if(k==='area') state.brush += 8;
-            if(k==='pay') state.pay += 5;
+            state.money -= state.costs[k];
+            if(k==='area') state.brush += 10;
             if(k==='expand') state.tiles = Math.min(6, state.tiles+1);
-            state.costs[k] = Math.floor(state.costs[k] * 1.8);
+            state.costs[k] = Math.floor(state.costs[k] * 2);
             updateUI(); renderShop(); init();
         }
     }
 
-    function buyPower(k, p) { if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); } }
-    function buyCos(val, price, isColor) {
-        if(state.money >= price) {
-            state.money -= price;
-            if(isColor) document.body.style.background = val;
-            else {
-                const d = document.createElement('div'); d.className = 'decor-item'; d.innerText = val;
-                d.style.left = Math.random()*70 + 15 + '%'; d.style.top = Math.random()*50 + 20 + '%';
-                document.getElementById('decoration-layer').appendChild(d);
-            }
-            updateUI(); renderShop();
-        }
-    }
+    function buyItem(k, p) { if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); } }
 
     function updateUI() { 
         document.getElementById('m-display').innerText = state.money; 
         document.getElementById('shop-m').innerText = state.money; 
-        document.getElementById('btn-spray').innerText = `🧴 Spray (${state.inventory.spray})`;
-        document.getElementById('btn-dude').innerText = `👨 Guard (${state.inventory.dude})`;
+        document.getElementById('count-spray').innerText = state.inventory.spray;
+        document.getElementById('count-dude').innerText = state.inventory.dude;
     }
 
     function toggleShop(o) { document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none'; updateUI(); renderShop(); }
 
     document.querySelectorAll('.bucket').forEach(b => {
-        b.addEventListener('dragover', e => e.preventDefault());
-        b.addEventListener('drop', e => {
-            const idx = e.dataTransfer.getData('text');
-            const station = document.getElementById(`st-${idx}`);
-            if(station && station.dataset.verb === b.dataset.verb) {
-                state.money += state.pay; station.style.visibility = 'hidden';
-                updateUI();
-                if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
-            }
-        });
-        // Simple touch-to-deposit fallback for some mobile browsers
-        b.addEventListener('touchstart', () => {
+        b.addEventListener('pointerup', () => {
             const activeWords = document.querySelectorAll('.word-box.active');
             activeWords.forEach(w => {
                 const station = w.parentElement;
@@ -330,10 +284,8 @@
         });
     });
 
-    window.addEventListener('mouseup', () => state.isDown = false);
-    window.addEventListener('touchend', () => state.isDown = false);
     init();
-    runBugSpawner();
+    setInterval(spawnBug, 5000);
 </script>
 </body>
 </html>

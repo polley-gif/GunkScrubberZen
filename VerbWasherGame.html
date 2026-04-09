@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gunk scrubber zen ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #e0f7fa; --primary: #00acc1; --dark: #006064; --accent: #ffb300;
+            --white: #ffffff; --gunk: #654321; --error: #ff5252; --success: #4caf50; 
+            --powerup: #9c27b0; --shelf: #3e2723;
+        }
+
+        body { 
+            font-family: 'Quicksand', sans-serif; background: var(--bg); color: var(--dark); 
+            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; touch-action: none;
+            transition: background 0.5s;
+            /* Prevents accidental highlighting of the whole page */
+            user-select: none; -webkit-user-select: none;
+        }
+
+        header { 
+            width: 100%; padding: 10px 0; display: flex; justify-content: space-around; 
+            align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); z-index: 100; 
+        }
+
+        .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-weight: 700; font-size: 1.2rem; border: 2px solid var(--primary); }
+
+        #game-floor { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 90%; max-width: 800px; justify-items: center; margin: auto; position: relative; z-index: 5; }
+
+        .work-station { position: relative; width: 200px; height: 130px; background: var(--white); border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border: 4px solid var(--white); z-index: 10; cursor: default; }
+        
+        .word-box { color: var(--dark); font-size: 1.1rem; font-weight: 700; z-index: 1; text-align: center; pointer-events: none; user-select: none; }
+        .word-box.active { cursor: grab; color: var(--primary); pointer-events: auto; }
+        
+        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; cursor: crosshair; touch-action: none; }
+
+        #decoration-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+        .decor-item { position: absolute; font-size: 4rem; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1)); }
+
+        #buckets { display: flex; gap: 10px; padding: 20px 0; width: 100%; justify-content: center; z-index: 100; }
+        .bucket { width: 110px; height: 80px; background: rgba(255,255,255,0.9); border: 3px dashed var(--primary); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; transition: 0.2s; user-select: none; }
+        .bucket.hover { background: #b2ebf2; transform: scale(1.05); }
+
+        #shop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; animation: pulseGreen 8s infinite; color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
+        @keyframes pulseGreen { 0%, 100% { background: #00251a; } 50% { background: #004d40; } }
+        
+        .tab-container { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { padding: 10px 15px; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; border-radius: 10px 10px 0 0; font-weight: 700; }
+        .tab-btn.active { background: var(--accent); color: var(--dark); }
+        
+        .shop-content { background: var(--shelf); padding: 20px; border-radius: 0 0 20px 20px; width: 100%; max-width: 600px; max-height: 60vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-item { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; text-align: center; }
+        .buy-btn { width: 100%; padding: 8px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; }
+        .buy-btn:disabled { background: #555; opacity: 0.5; }
+
+        .bug { position: absolute; font-size: 2.2rem; z-index: 150; cursor: pointer; user-select: none; }
+        .dude { position: absolute; font-size: 3rem; z-index: 160; transition: transform 0.2s ease-out; pointer-events: none; }
+        .nav-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: 700; }
+        
+        #powerup-ui { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+        .p-btn { background: var(--powerup); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 0 #6a1b9a; }
+        .p-btn:active { transform: translateY(2px); box-shadow: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="stat-card">💰 $<span id="m-display">0</span></div>
+        <button class="nav-btn" onclick="toggleShop(true)">🛒 Shop</button>
+    </header>
+
+    <div id="decoration-layer"></div>
+    <div id="game-floor"></div>
+
+    <div id="powerup-ui">
+        <button class="p-btn" id="btn-spray" onclick="useSpray()">🧴 Spray (0)</button>
+        <button class="p-btn" id="btn-dude" onclick="spawnDude()">👨 Guard (0)</button>
+    </div>
+
+    <div id="buckets">
+        <div class="bucket" data-verb="going">🏃 going</div>
+        <div class="bucket" data-verb="doing">🥋 doing</div>
+        <div class="bucket" data-verb="playing">🎮 playing</div>
+    </div>
+
+    <div id="shop-overlay">
+        <h1 style="color: var(--accent);">Zen Emporium</h1>
+        <div class="stat-card" style="margin-bottom: 10px; color: var(--dark);">Balance: $<span id="shop-m">0</span></div>
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="showTab('perm')">🛠️ Upgrades</button>
+            <button class="tab-btn" onclick="showTab('power')">⚡ Powerups</button>
+            <button class="tab-btn" onclick="showTab('cosmo')">✨ Cosmetics</button>
+        </div>
+        <div id="shop-perm" class="shop-content"></div>
+        <div id="shop-power" class="shop-content" style="display:none"></div>
+        <div id="shop-cosmo" class="shop-content" style="display:none"></div>
+        <button class="nav-btn" style="margin-top: 20px; background: #546e7a;" onclick="toggleShop(false)">Back to Zen</button>
+    </div>
+
+<script>
+    let state = {
+        money: 0, brush: 22, pay: 10, tiles: 1, 
+        lvls: { area: 1, pay: 1, expand: 1, soap: 1 },
+        costs: { area: 15, pay: 25, expand: 100, soap: 50 },
+        isDown: false, gunkColor: 'rgba(101, 67, 33, 0.9)', 
+        inventory: { spray: 0, dude: 0 },
+        bugTimer: 6000
+    };
+
+    const activities = [
+        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" },
+        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" },
+        { text: "cycling 🚲", verb: "going" }, { text: "pottery 🏺", verb: "doing" }, { text: "piano 🎹", verb: "playing" }
+    ];
+
+    function init() {
+        const floor = document.getElementById('game-floor');
+        floor.innerHTML = '';
+        for(let i=0; i < state.tiles; i++) {
+            const act = activities[Math.floor(Math.random()*activities.length)];
+            const station = document.createElement('div');
+            station.className = 'work-station'; station.id = `st-${i}`;
+            station.dataset.verb = act.verb;
+            station.innerHTML = `<div class="word-box" id="word-${i}">${act.text}</div><canvas id="canvas-${i}" width="200" height="130"></canvas>`;
+            floor.appendChild(station);
+            const ctx = station.querySelector('canvas').getContext('2d');
+            ctx.fillStyle = state.gunkColor;
+            ctx.fillRect(0,0,200,130);
+            const can = station.querySelector('canvas');
+            can.addEventListener('mousedown', (e) => { state.isDown = true; scrub(e, i); });
+            can.addEventListener('mousemove', (e) => scrub(e, i));
+            document.getElementById(`word-${i}`).addEventListener('dragstart', (e) => e.dataTransfer.setData('text', i));
+        }
+    }
+
+    function scrub(e, i) {
+        if(!state.isDown) return;
+        const canvas = document.getElementById(`canvas-${i}`);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath(); 
+        ctx.arc(clientX - rect.left, clientY - rect.top, state.brush, 0, Math.PI*2); 
+        ctx.fill();
+        
+        // Every few frames, check if tile is clean
+        if(Math.random() > 0.8) {
+            const data = ctx.getImageData(0,0,200,130).data;
+            let opaque = 0; for(let p=3; p<data.length; p+=256) if(data[p] > 40) opaque++;
+            if(opaque < 15) { 
+                canvas.style.opacity = "0"; canvas.style.pointerEvents = "none";
+                const wb = document.getElementById(`word-${i}`);
+                wb.classList.add('active'); wb.setAttribute('draggable', 'true');
+            }
+        }
+    }
+
+    // --- BUG LOGIC (Scales over time/money) ---
+    function spawnBug() {
+        const bug = document.createElement('div');
+        bug.className = 'bug'; bug.innerText = '🪲';
+        document.body.appendChild(bug);
+        let pos = { x: -50, y: Math.random() * window.innerHeight };
+        let targetIdx = Math.floor(Math.random() * state.tiles);
+        
+        const move = setInterval(() => {
+            const target = document.getElementById(`st-${targetIdx}`);
+            if(!target || target.style.visibility === 'hidden') {
+                targetIdx = Math.floor(Math.random() * state.tiles); // Switch target if hidden
+                return;
+            }
+            let rect = target.getBoundingClientRect();
+            let dx = (rect.left + 50) - pos.x;
+            let dy = (rect.top + 50) - pos.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if(dist < 15) {
+                const can = document.getElementById(`canvas-${targetIdx}`);
+                const ctx = can.getContext('2d');
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = state.gunkColor.replace('0.9', '0.5');
+                ctx.beginPath(); ctx.arc(Math.random()*200, Math.random()*130, 20, 0, Math.PI*2); ctx.fill();
+                can.style.opacity = "1"; can.style.pointerEvents = "auto";
+                document.getElementById(`word-${targetIdx}`).classList.remove('active');
+            } else {
+                pos.x += dx/dist * 2.8; pos.y += dy/dist * 2.8;
+            }
+            bug.style.left = pos.x + 'px'; bug.style.top = pos.y + 'px';
+            bug.style.transform = `rotate(${Math.sin(Date.now()/100)*15}deg)`;
+        }, 50);
+
+        bug.onclick = () => { killBug(bug, move); };
+        bug.dataset.interval = move;
+    }
+
+    function killBug(bug, interval) {
+        state.money += 5; updateUI();
+        bug.remove(); clearInterval(interval);
+    }
+
+    function runBugSpawner() {
+        // More tiles = faster bugs. More money = chance for double bugs.
+        let spawnChance = state.money > 500 ? 0.7 : 0.4;
+        spawnBug();
+        if(Math.random() < spawnChance) setTimeout(spawnBug, 500);
+        
+        let nextInterval = Math.max(2500, state.bugTimer - (state.lvls.expand * 300));
+        setTimeout(runBugSpawner, nextInterval);
+    }
+
+    // --- POWERUPS ---
+    function useSpray() {
+        if(state.inventory.spray <= 0) return;
+        state.inventory.spray--;
+        const bugs = document.querySelectorAll('.bug');
+        bugs.forEach(b => {
+            const int = b.dataset.interval;
+            killBug(b, parseInt(int));
+        });
+        updateUI();
+    }
+
+    function spawnDude() {
+        if(state.inventory.dude <= 0) return;
+        state.inventory.dude--;
+        const dude = document.createElement('div');
+        dude.className = 'dude'; dude.innerText = '👨‍🔧';
+        document.body.appendChild(dude);
+        let dPos = { x: window.innerWidth/2, y: window.innerHeight/2 };
+        
+        const hunt = setInterval(() => {
+            const bugs = document.querySelectorAll('.bug');
+            if(bugs.length > 0) {
+                const bRect = bugs[0].getBoundingClientRect();
+                dPos.x += (bRect.left - dPos.x) * 0.15;
+                dPos.y += (bRect.top - dPos.y) * 0.15;
+                if(Math.abs(dPos.x - bRect.left) < 30) bugs[0].click();
+            } else {
+                dPos.y += Math.sin(Date.now()/300) * 3;
+            }
+            dude.style.left = dPos.x + 'px'; dude.style.top = dPos.y + 'px';
+        }, 40);
+        setTimeout(() => { dude.remove(); clearInterval(hunt); }, 20000);
+        updateUI();
+    }
+
+    // --- SHOP SYSTEM ---
+    function showTab(t) {
+        document.querySelectorAll('.shop-content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('shop-' + t).style.display = 'grid';
+        event.target.classList.add('active');
+        renderShop();
+    }
+
+    function renderShop() {
+        const p = document.getElementById('shop-perm');
+        p.innerHTML = `
+            ${shopItem('🚿 Nozzle', 'area')}
+            ${shopItem('💎 Pay', 'pay')}
+            ${shopItem('🧼 Soap', 'soap')}
+            ${shopItem('🏗️ Floor', 'expand')}
+        `;
+        const pw = document.getElementById('shop-power');
+        pw.innerHTML = `
+            <div class="shop-item"><h3>🧴 Bug Spray</h3><button class="buy-btn" onclick="buyPower('spray', 40)">$40</button></div>
+            <div class="shop-item"><h3>👨‍🔧 Guardian</h3><button class="buy-btn" onclick="buyPower('dude', 80)">$80</button></div>
+        `;
+        const c = document.getElementById('shop-cosmo');
+        c.innerHTML = `
+            <div class="shop-item"><h3>🪴 Bonsai</h3><button class="buy-btn" onclick="buyCos('🪴', 150, false)">$150</button></div>
+            <div class="shop-item"><h3>🐠 Tank</h3><button class="buy-btn" onclick="buyCos('🐠', 300, false)">$300</button></div>
+            <div class="shop-item"><h3>🌸 Sakura</h3><button class="buy-btn" onclick="buyCos('#ffd1dc', 200, true)">$200</button></div>
+        `;
+    }
+
+    function shopItem(n, k) {
+        return `<div class="shop-item"><h3>${n}</h3><p>Lvl ${state.lvls[k]}</p><button class="buy-btn" ${state.money < state.costs[k] ? 'disabled' : ''} onclick="buy('${k}')">$${state.costs[k]}</button></div>`;
+    }
+
+    function buy(k) {
+        if(state.money >= state.costs[k]) {
+            state.money -= state.costs[k]; state.lvls[k]++;
+            if(k==='area') state.brush += 8;
+            if(k==='pay') state.pay += 5;
+            if(k==='expand') state.tiles = Math.min(6, state.tiles+1);
+            state.costs[k] = Math.floor(state.costs[k] * 1.8);
+            updateUI(); renderShop(); init();
+        }
+    }
+
+    function buyPower(k, p) { if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); } }
+    function buyCos(val, price, isColor) {
+        if(state.money >= price) {
+            state.money -= price;
+            if(isColor) document.body.style.background = val;
+            else {
+                const d = document.createElement('div'); d.className = 'decor-item'; d.innerText = val;
+                d.style.left = Math.random()*80 + 10 + '%'; d.style.top = Math.random()*60 + 20 + '%';
+                document.getElementById('decoration-layer').appendChild(d);
+            }
+            updateUI(); renderShop();
+        }
+    }
+
+    function updateUI() { 
+        document.getElementById('m-display').innerText = state.money; 
+        document.getElementById('shop-m').innerText = state.money; 
+        document.getElementById('btn-spray').innerText = `🧴 Spray (${state.inventory.spray})`;
+        document.getElementById('btn-dude').innerText = `👨 Guard (${state.inventory.dude})`;
+    }
+
+    function toggleShop(o) { document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none'; updateUI(); renderShop(); }
+
+    document.querySelectorAll('.bucket').forEach(b => {
+        b.addEventListener('dragover', e => e.preventDefault());
+        b.addEventListener('drop', e => {
+            const idx = e.dataTransfer.getData('text');
+            const station = document.getElementById(`st-${idx}`);
+            if(station && station.dataset.verb === b.dataset.verb) {
+                state.money += state.pay; station.style.visibility = 'hidden';
+                updateUI();
+                if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
+            }
+        });
+    });
+
+    window.addEventListener('mouseup', () => state.isDown = false);
+    init();
+    runBugSpawner();
+</script>
+</body>
+</html>

@@ -3,78 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gunk Scrubber Mobile Fix</title>
+    <title>Gunk Scrubber Zen</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #e0f7fa; --primary: #00acc1; --dark: #006064; --accent: #ffb300;
             --white: #ffffff; --gunk: #654321; --success: #4caf50; --powerup: #9c27b0;
         }
-
-        /* CRITICAL: Disables all default mobile browser gestures */
-        * { touch-action: none; -webkit-tap-highlight-color: transparent; }
-
+        * { touch-action: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { 
             font-family: 'Quicksand', sans-serif; background: var(--bg); color: var(--dark); 
             margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
             user-select: none; -webkit-user-select: none;
         }
-
-        header { 
-            width: 100%; padding: 10px 0; display: flex; justify-content: space-around; 
-            align-items: center; background: rgba(255,255,255,0.8); z-index: 100; 
-        }
-
-        .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; font-weight: 700; border: 2px solid var(--primary); }
-
-        #game-floor { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-            gap: 10px; width: 95%; margin: auto; z-index: 5; 
-        }
-
-        .work-station { 
-            position: relative; width: 150px; height: 100px; background: var(--white); border-radius: 15px; 
-            display: flex; align-items: center; justify-content: center; border: 4px solid var(--white);
-        }
-        
-        /* Highlight if selected on mobile */
-        .work-station.selected { border-color: var(--accent); transform: scale(1.05); }
-
-        .word-box { font-weight: 700; font-size: 0.9rem; z-index: 1; pointer-events: none; }
-        
-        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 11px; width: 100%; height: 100%; }
-
-        #buckets { display: flex; gap: 8px; padding: 20px 0; width: 100%; justify-content: center; z-index: 100; }
-        .bucket { 
-            width: 85px; height: 65px; background: var(--white); border: 3px dashed var(--primary); 
-            border-radius: 15px; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; font-weight: 700; font-size: 0.7rem; transition: 0.2s;
-        }
-
-        #powerup-ui { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        .p-btn { background: var(--powerup); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; }
-
-        .bug { position: absolute; font-size: 2rem; z-index: 150; }
-        .nav-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 700; }
-
-        #shop-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #00251a; 
-            color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; 
-        }
+        header { width: 100%; padding: 10px; display: flex; justify-content: space-around; align-items: center; background: rgba(255,255,255,0.8); z-index: 100; }
+        .stat-card { background: var(--white); padding: 8px 15px; border-radius: 50px; font-weight: 700; border: 2px solid var(--primary); }
+        #game-floor { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 95%; margin: auto; z-index: 5; }
+        .work-station { position: relative; width: 140px; height: 100px; background: var(--white); border-radius: 15px; display: flex; align-items: center; justify-content: center; border: 4px solid var(--white); transition: transform 0.2s; }
+        .work-station.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
+        .word-box { font-weight: 700; font-size: 0.8rem; z-index: 1; pointer-events: none; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 11px; width: 100%; height: 100%; touch-action: none; }
+        #buckets { display: flex; gap: 5px; padding: 15px 0; width: 100%; justify-content: center; z-index: 100; }
+        .bucket { width: 80px; height: 60px; background: var(--white); border: 2px dashed var(--primary); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 0.65rem; }
+        #powerup-ui { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+        .p-btn { background: var(--powerup); color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 0 #4a148c; }
+        .p-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #4a148c; }
+        .bug { position: absolute; font-size: 2rem; z-index: 150; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .exterminator { position: absolute; font-size: 2.5rem; z-index: 160; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        #shop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 37, 26, 0.95); color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 400px; }
+        .shop-item { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; text-align: center; }
+        .buy-btn { background: var(--success); color: white; border: none; padding: 8px; border-radius: 5px; width: 100%; font-weight: 700; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <header>
         <div class="stat-card">💰 $<span id="m-display">0</span></div>
-        <button class="nav-btn" onclick="toggleShop(true)">🛒 Shop</button>
+        <button class="stat-card" style="background: var(--primary); color: white;" onclick="toggleShop(true)">🛒 Shop</button>
     </header>
 
     <div id="game-floor"></div>
 
     <div id="powerup-ui">
         <button class="p-btn" onpointerdown="useSpray()">🧴 Spray (<span id="count-spray">0</span>)</button>
-        <button class="p-btn" onpointerdown="spawnDude()">👨 Guard (<span id="count-dude">0</span>)</button>
+        <button class="p-btn" onpointerdown="spawnDude()">👨‍🔧 Guard (<span id="count-dude">0</span>)</button>
     </div>
 
     <div id="buckets">
@@ -84,173 +57,7 @@
     </div>
 
     <div id="shop-overlay">
-        <h1>Emporium</h1>
-        <div id="shop-perm"></div>
-        <button class="nav-btn" style="margin-top: 20px;" onclick="toggleShop(false)">Back</button>
-    </div>
-
-<script>
-    let state = {
-        money: 0, brush: 25, pay: 10, tiles: 1, selectedIdx: null,
-        costs: { area: 15, expand: 100 },
-        inventory: { spray: 0, dude: 0 },
-        isDrawing: false
-    };
-
-    const activities = [
-        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" }
-    ];
-
-    function init() {
-        const floor = document.getElementById('game-floor');
-        floor.innerHTML = '';
-        for(let i=0; i < state.tiles; i++) {
-            const act = activities[i % activities.length];
-            const station = document.createElement('div');
-            station.className = 'work-station';
-            station.id = `st-${i}`;
-            station.dataset.verb = act.verb;
-            station.dataset.cleaned = "false";
-            
-            // Interaction logic
-            station.onpointerdown = (e) => {
-                if(station.dataset.cleaned === "true") {
-                    selectStation(i);
-                } else {
-                    state.isDrawing = true;
-                    scrub(e, i);
-                }
-            };
-
-            station.innerHTML = `<div class="word-box">${act.text}</div><canvas id="canvas-${i}" width="150" height="100"></canvas>`;
-            floor.appendChild(station);
-            
-            const ctx = station.querySelector('canvas').getContext('2d');
-            ctx.fillStyle = 'rgba(101, 67, 33, 0.95)';
-            ctx.fillRect(0,0,150,100);
-
-            station.addEventListener('pointermove', (e) => { if(state.isDrawing) scrub(e, i); });
-            station.addEventListener('pointerup', () => { state.isDrawing = false; });
-            station.addEventListener('pointerleave', () => { state.isDrawing = false; });
-        }
-    }
-
-    function scrub(e, i) {
-        const can = document.getElementById(`canvas-${i}`);
-        const station = document.getElementById(`st-${i}`);
-        if(!can || station.dataset.cleaned === "true") return;
-        
-        const ctx = can.getContext('2d');
-        const rect = can.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath();
-        ctx.arc(x, y, state.brush, 0, Math.PI*2);
-        ctx.fill();
-
-        // Check if mostly clean
-        if(Math.random() > 0.9) {
-            const pix = ctx.getImageData(0,0,150,100).data;
-            let count = 0;
-            for(let p=3; p<pix.length; p+=128) if(pix[p] > 50) count++;
-            if(count < 10) {
-                can.style.display = 'none';
-                station.dataset.cleaned = "true";
-            }
-        }
-    }
-
-    function selectStation(i) {
-        document.querySelectorAll('.work-station').forEach(s => s.classList.remove('selected'));
-        state.selectedIdx = i;
-        document.getElementById(`st-${i}`).classList.add('selected');
-    }
-
-    function checkMatch(verb) {
-        if(state.selectedIdx === null) return;
-        const station = document.getElementById(`st-${state.selectedIdx}`);
-        if(station.dataset.verb === verb) {
-            state.money += state.pay;
-            station.style.visibility = 'hidden';
-            state.selectedIdx = null;
-            updateUI();
-            if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
-        }
-    }
-
-    function spawnBug() {
-        const bug = document.createElement('div');
-        bug.className = 'bug'; bug.innerText = '🪲';
-        bug.style.left = '-50px'; bug.style.top = Math.random() * 80 + '%';
-        document.body.appendChild(bug);
-
-        const move = setInterval(() => {
-            let curLeft = parseInt(bug.style.left);
-            bug.style.left = (curLeft + 3) + 'px';
-            if(curLeft > window.innerWidth) { clearInterval(move); bug.remove(); }
-        }, 30);
-
-        bug.onpointerdown = () => {
-            state.money += 5; updateUI();
-            clearInterval(move); bug.remove();
-        };
-    }
-
-    function useSpray() {
-        if(state.inventory.spray > 0) {
-            state.inventory.spray--;
-            document.querySelectorAll('.bug').forEach(b => b.onpointerdown());
-            updateUI();
-        }
-    }
-
-    function spawnDude() {
-        if(state.inventory.dude > 0) {
-            state.inventory.dude--;
-            updateUI();
-            const d = document.createElement('div');
-            d.innerText = '👨‍🔧'; d.className = 'bug';
-            d.style.left = '50%'; d.style.top = '50%';
-            document.body.appendChild(d);
-            setTimeout(() => d.remove(), 5000);
-        }
-    }
-
-    function toggleShop(o) {
-        document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none';
-        renderShop();
-    }
-
-    function renderShop() {
-        document.getElementById('shop-perm').innerHTML = `
-            <button onclick="buy('area')">Bigger Brush ($${state.costs.area})</button><br><br>
-            <button onclick="buyItem('spray', 40)">Buy Spray ($40)</button>
-        `;
-    }
-
-    function buyItem(k, p) {
-        if(state.money >= p) { state.money -= p; state.inventory[k]++; updateUI(); renderShop(); }
-    }
-
-    function buy(k) {
-        if(state.money >= state.costs[k]) {
-            state.money -= state.costs[k];
-            if(k==='area') state.brush += 10;
-            state.costs[k] *= 2;
-            updateUI(); renderShop();
-        }
-    }
-
-    function updateUI() {
-        document.getElementById('m-display').innerText = state.money;
-        document.getElementById('count-spray').innerText = state.inventory.spray;
-        document.getElementById('count-dude').innerText = state.inventory.dude;
-    }
-
-    init();
-    setInterval(spawnBug, 5000);
-</script>
-</body>
-</html>
+        <h1 style="color: var(--accent);">Zen Shop</h1>
+        <div class="shop-grid">
+            <div class="shop-item">Brush Size<button class="buy-btn" onclick="buy('area')">Buy ($<span id="cost-area">15</span>)</button></div>
+            <div class="shop-item">New Tile<button class="buy-btn" onclick="buy('expand')">

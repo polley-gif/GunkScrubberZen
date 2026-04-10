@@ -88,3 +88,225 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('upgrades')">Upgrades</button>
             <button class="tab-btn" onclick="switchTab('items')">Powerups</button>
+            <button class="tab-btn" onclick="switchTab('visual')">Visuals</button>
+        </div>
+        
+        <div class="shop-container">
+            <div id="shop-upgrades" class="shop-grid"></div>
+            <div id="shop-items" class="shop-grid" style="display:none"></div>
+            <div id="shop-visual" class="shop-grid" style="display:none"></div>
+        </div>
+        
+        <button class="nav-btn" style="margin-top: 20px; background: #546e7a;" onclick="toggleShop(false)">Return</button>
+    </div>
+
+<script>
+    let state = {
+        money: 0, brush: 25, pay: 10, tiles: 1, 
+        lvls: { area: 1, expand: 1, pay: 1 },
+        costs: { area: 15, expand: 100, pay: 50 },
+        isDrawing: false, dragTarget: null, activeTab: 'upgrades'
+    };
+
+    const activities = [
+        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" },
+        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" }
+    ];
+
+    function init() {
+        const floor = document.getElementById('game-floor');
+        floor.innerHTML = '';
+        for(let i=0; i < state.tiles; i++) {
+            const act = activities[i % activities.length];
+            const station = document.createElement('div');
+            station.className = 'work-station';
+            station.id = `st-${i}`;
+            
+            const word = document.createElement('div');
+            word.className = 'word-box';
+            word.id = `word-${i}`;
+            word.innerText = act.text;
+            word.dataset.verb = act.verb;
+            word.dataset.idx = i;
+
+            const can = document.createElement('canvas');
+            can.width = 160; can.height = 110;
+            const ctx = can.getContext('2d');
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(0,0,160,110);
+
+            station.appendChild(word);
+            station.appendChild(can);
+            floor.appendChild(station);
+
+            // SCRUBBING
+            can.onpointerdown = (e) => { 
+                state.isDrawing = true; 
+                scrub(e, i); 
+                can.setPointerCapture(e.pointerId); 
+            };
+            can.onpointermove = (e) => { if(state.isDrawing) scrub(e, i); };
+            can.onpointerup = () => state.isDrawing = false;
+
+            // DRAGGING
+            word.onpointerdown = (e) => {
+                if(!word.classList.contains('active')) return;
+                state.dragTarget = word;
+                word.classList.add('dragging');
+                updateDragPos(e.clientX, e.clientY);
+                e.preventDefault();
+            };
+        }
+    }
+
+    function scrub(e, i) {
+        const can = document.getElementById(`st-${i}`).querySelector('canvas');
+        const ctx = can.getContext('2d');
+        const rect = can.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath(); ctx.arc(x, y, state.brush, 0, Math.PI*2); ctx.fill();
+
+        if(Math.random() > 0.8) {
+            const pix = ctx.getImageData(0,0,160,110).data;
+            let opaque = 0;
+            for(let p=3; p<pix.length; p+=256) if(pix[p] > 100) opaque++;
+            if(opaque < 8) {
+                can.style.display = 'none';
+                document.getElementById(`word-${i}`).classList.add('active');
+            }
+        }
+    }
+
+    // GLOBAL DRAG TRACKER
+    document.addEventListener('pointermove', (e) => {
+        if (!state.dragTarget) return;
+        updateDragPos(e.clientX, e.clientY);
+        
+        // Check collisions for highlight
+        document.querySelectorAll('.bucket').forEach(b => {
+            const r = b.getBoundingClientRect();
+            if(e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) {
+                b.classList.add('highlight');
+            } else {
+                b.classList.remove('highlight');
+            }
+        });
+    });
+
+    document.addEventListener('pointerup', (e) => {
+        if (!state.dragTarget) return;
+        const word = state.dragTarget;
+        const verb = word.dataset.verb;
+        const bucket = document.getElementById(`bucket-${verb}`);
+        const r = bucket.getBoundingClientRect();
+
+        if(e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) {
+            state.money += state.pay;
+            document.getElementById(`st-${word.dataset.idx}`).style.visibility = 'hidden';
+            updateUI();
+            if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
+        }
+
+        word.classList.remove('dragging');
+        word.style.left = 'auto'; word.style.top = 'auto';
+        state.dragTarget = null;
+        document.querySelectorAll('.bucket').forEach(b => b.classList.remove('highlight'));
+    });
+
+    function updateDragPos(x, y) {
+        state.dragTarget.style.left = (x - 40) + 'px';
+        state.dragTarget.style.top = (y - 20) + 'px';
+    }
+
+    // SHOP LOGIC
+    function toggleShop(o) {
+        document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none';
+        if(o) renderShop();
+    }
+
+    function switchTab(t) {
+        state.activeTab = t;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[onclick="switchTab('${t}')"]`).classList.add('active');
+        document.querySelectorAll('.shop-grid').forEach(g => g.style.display = 'none');
+        document.getElementById('shop-' + t).style.display = 'grid';
+        renderShop();
+    }
+
+    function renderShop() {
+        document.getElementById('shop-m').innerText = state.money;
+        
+        // Upgrades
+        document.getElementById('shop-upgrades').innerHTML = `
+            <div class="shop-item"><h3>🚿 Nozzle</h3><p>Lvl ${state.lvls.area}</p><button class="buy-btn" onclick="buy('area')">$${state.costs.area}</button></div>
+            <div class="shop-item"><h3>🏗️ Expand</h3><p>Lvl ${state.lvls.expand}</p><button class="buy-btn" onclick="buy('expand')">$${state.costs.expand}</button></div>
+            <div class="shop-item"><h3>💎 Payrate</h3><p>Lvl ${state.lvls.pay}</p><button class="buy-btn" onclick="buy('pay')">$${state.costs.pay}</button></div>
+        `;
+
+        // Items
+        document.getElementById('shop-items').innerHTML = `
+            <div class="shop-item"><h3>🧴 Spray</h3><p>Insta-clean bugs</p><button class="buy-btn" onclick="buyOneOff(40, 'spray')">$40</button></div>
+            <div class="shop-item"><h3>👨‍🔧 Guard</h3><p>Auto-exterminator</p><button class="buy-btn" onclick="buyOneOff(100, 'guard')">$100</button></div>
+        `;
+
+        // Visuals
+        document.getElementById('shop-visual').innerHTML = `
+            <div class="shop-item"><h3>🌸 Sakura</h3><p>Pink vibe</p><button class="buy-btn" onclick="setVisual('#ffd1dc')">$200</button></div>
+            <div class="shop-item"><h3>🌲 Forest</h3><p>Green vibe</p><button class="buy-btn" onclick="setVisual('#c8e6c9')">$200</button></div>
+        `;
+    }
+
+    function buy(k) {
+        if(state.money >= state.costs[k]) {
+            state.money -= state.costs[k];
+            state.lvls[k]++;
+            if(k==='area') state.brush += 8;
+            if(k==='expand') state.tiles = Math.min(8, state.tiles + 1);
+            if(k==='pay') state.pay += 10;
+            state.costs[k] = Math.floor(state.costs[k] * 2.5);
+            updateUI(); renderShop(); init();
+        }
+    }
+
+    function buyOneOff(p, type) {
+        if(state.money >= p) {
+            state.money -= p;
+            alert(type + " purchased! (Logic ready for bug invasion)");
+            updateUI();
+        }
+    }
+
+    function setVisual(color) {
+        if(state.money >= 200) {
+            state.money -= 200;
+            document.body.style.background = color;
+            updateUI();
+        }
+    }
+
+    function spawnBug() {
+        if(Math.random() > 0.7) return; // Scale bug frequency
+        const bug = document.createElement('div');
+        bug.className = 'bug'; bug.innerText = '🪲';
+        bug.style.left = '-50px'; bug.style.top = (Math.random() * 80) + '%';
+        document.body.appendChild(bug);
+        const move = setInterval(() => {
+            let x = parseInt(bug.style.left);
+            bug.style.left = (x + 2) + 'px';
+            if(x > window.innerWidth) { clearInterval(move); bug.remove(); }
+        }, 30);
+        bug.onpointerdown = () => { state.money += 5; updateUI(); clearInterval(move); bug.remove(); };
+    }
+
+    function updateUI() {
+        document.getElementById('m-display').innerText = state.money;
+    }
+
+    init();
+    setInterval(spawnBug, 4000);
+</script>
+</body>
+</html>

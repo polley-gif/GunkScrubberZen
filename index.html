@@ -3,50 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gunk Scrubber: Zen Edition</title>
+    <title>Zen Gunk Scrubber</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #e0f7fa; --primary: #00acc1; --dark: #006064; --accent: #ffb300;
-            --white: #ffffff; --shelf: #3e2723; --success: #4caf50; --powerup: #9c27b0;
+            --white: #ffffff; --shelf: #1a332d; --success: #4caf50; --powerup: #9c27b0;
         }
         * { touch-action: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        
         body { 
             font-family: 'Quicksand', sans-serif; background: var(--bg); color: var(--dark); 
             margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
             user-select: none; -webkit-user-select: none;
         }
-        header { width: 100%; padding: 10px; display: flex; justify-content: space-around; align-items: center; background: rgba(255,255,255,0.8); z-index: 100; }
+
+        header { width: 100%; padding: 15px; display: flex; justify-content: space-around; align-items: center; background: rgba(255,255,255,0.8); z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .stat-card { background: var(--white); padding: 8px 20px; border-radius: 50px; font-weight: 700; border: 2px solid var(--primary); }
         
-        #game-floor { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; width: 95%; max-width: 800px; margin: auto; z-index: 5; }
-        .work-station { position: relative; width: 160px; height: 110px; background: var(--white); border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 4px solid var(--white); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
-        .word-box { font-weight: 700; font-size: 0.9rem; z-index: 1; pointer-events: none; transition: transform 0.1s; }
-        .word-box.active { pointer-events: auto; cursor: grab; color: var(--primary); }
-        .word-box.dragging { position: fixed; z-index: 1000; pointer-events: none; transform: scale(1.2); cursor: grabbing; }
-
-        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; width: 100%; height: 100%; }
-
-        #buckets { display: flex; gap: 10px; padding: 20px 0; width: 100%; justify-content: center; z-index: 100; }
-        .bucket { 
-            width: 100px; height: 75px; background: rgba(255,255,255,0.9); border: 3px dashed var(--primary); 
-            border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-weight: 700; font-size: 0.8rem; transition: background 0.2s;
+        #game-floor { 
+            flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+            gap: 20px; width: 95%; max-width: 800px; margin: 40px auto; 
+            justify-content: center; align-content: center;
         }
-        .bucket.highlight { background: var(--accent); border-style: solid; color: white; }
 
+        .work-station { 
+            position: relative; width: 160px; height: 110px; background: var(--white); 
+            border-radius: 20px; display: flex; align-items: center; justify-content: center; 
+            border: 4px solid var(--white); box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        .word-box { font-weight: 700; font-size: 0.9rem; z-index: 1; pointer-events: none; text-align: center; padding: 5px; }
+        .word-box.active { pointer-events: auto; cursor: grab; color: var(--primary); }
+        .word-box.dragging { position: fixed; z-index: 9999; pointer-events: none; transform: scale(1.2); color: var(--dark); background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        canvas { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 16px; width: 100%; height: 100%; touch-action: none; }
+
+        #buckets { display: flex; gap: 15px; padding: 30px 0; width: 100%; justify-content: center; background: rgba(255,255,255,0.5); border-top: 2px solid var(--primary); }
+        .bucket { 
+            width: 100px; height: 80px; background: var(--white); border: 3px dashed var(--primary); 
+            border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-weight: 700; font-size: 0.8rem; transition: all 0.2s;
+        }
+        .bucket.highlight { background: var(--accent); transform: scale(1.1); border-style: solid; }
+
+        /* SHOP INTERFACE */
         #shop-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #00251a; 
-            color: white; z-index: 200; display: none; flex-direction: column; align-items: center; padding: 20px; 
+            color: white; z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 20px; 
         }
-        .tab-btn { padding: 10px 20px; border: none; background: rgba(255,255,255,0.1); color: white; font-weight: 700; border-radius: 10px 10px 0 0; margin: 0 2px; }
-        .tab-btn.active { background: var(--accent); color: var(--dark); }
-        .shop-content { background: var(--shelf); padding: 20px; border-radius: 15px; width: 100%; max-width: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .shop-item { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; text-align: center; }
-        .buy-btn { width: 100%; padding: 8px; margin-top: 10px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; }
+        .tabs { display: flex; margin-bottom: 0; width: 100%; max-width: 500px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: rgba(255,255,255,0.1); color: white; font-weight: 700; border-radius: 15px 15px 0 0; cursor: pointer; }
+        .tab-btn.active { background: var(--shelf); color: var(--accent); }
+        
+        .shop-container { background: var(--shelf); padding: 20px; border-radius: 0 0 20px 20px; width: 100%; max-width: 500px; height: 60vh; overflow-y: auto; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .shop-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .buy-btn { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; }
+        .buy-btn:disabled { opacity: 0.5; background: #444; }
 
-        .bug { position: absolute; font-size: 2.2rem; z-index: 150; }
+        .bug { position: absolute; font-size: 2.2rem; z-index: 1500; cursor: pointer; }
         .nav-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 50px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
@@ -66,177 +82,9 @@
     </div>
 
     <div id="shop-overlay">
-        <h1 style="color: var(--accent);">Zen Emporium</h1>
-        <div class="stat-card" style="margin-bottom: 15px; color: var(--dark);">Balance: $<span id="shop-m">0</span></div>
-        <div style="display: flex;">
-            <button class="tab-btn active">Upgrades</button>
-        </div>
-        <div id="shop-perm" class="shop-content"></div>
-        <button class="nav-btn" style="margin-top: 20px; background: #546e7a;" onclick="toggleShop(false)">Back</button>
-    </div>
-
-<script>
-    let state = {
-        money: 0, brush: 25, pay: 10, tiles: 1, 
-        lvls: { area: 1, expand: 1 },
-        costs: { area: 15, expand: 100 },
-        isDrawing: false, dragTarget: null
-    };
-
-    const activities = [
-        { text: "swimming 🏊", verb: "going" }, { text: "karate 🥋", verb: "doing" }, { text: "the guitar 🎸", verb: "playing" },
-        { text: "running 🏃", verb: "going" }, { text: "yoga 🧘", verb: "doing" }, { text: "chess ♟️", verb: "playing" }
-    ];
-
-    function init() {
-        const floor = document.getElementById('game-floor');
-        floor.innerHTML = '';
-        for(let i=0; i < state.tiles; i++) {
-            const act = activities[i % activities.length];
-            const station = document.createElement('div');
-            station.className = 'work-station';
-            station.id = `st-${i}`;
-            
-            const word = document.createElement('div');
-            word.className = 'word-box';
-            word.id = `word-${i}`;
-            word.innerText = act.text;
-            word.dataset.verb = act.verb;
-            word.dataset.idx = i;
-
-            const can = document.createElement('canvas');
-            can.width = 160; can.height = 110;
-            const ctx = can.getContext('2d');
-            ctx.fillStyle = '#654321';
-            ctx.fillRect(0,0,160,110);
-
-            station.appendChild(word);
-            station.appendChild(can);
-            floor.appendChild(station);
-
-            // INPUT LOGIC
-            can.onpointerdown = (e) => { state.isDrawing = true; scrub(e, i); can.setPointerCapture(e.pointerId); };
-            can.onpointermove = (e) => { if(state.isDrawing) scrub(e, i); };
-            can.onpointerup = () => state.isDrawing = false;
-
-            // DRAG LOGIC (Manual Pointer Follow)
-            word.onpointerdown = (e) => {
-                if(!word.classList.contains('active')) return;
-                state.dragTarget = word;
-                word.classList.add('dragging');
-                moveAt(e.clientX, e.clientY);
-            };
-        }
-    }
-
-    function scrub(e, i) {
-        const can = document.getElementById(`st-${i}`).querySelector('canvas');
-        const ctx = can.getContext('2d');
-        const rect = can.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath(); ctx.arc(x, y, state.brush, 0, Math.PI*2); ctx.fill();
-
-        if(Math.random() > 0.9) {
-            const pix = ctx.getImageData(0,0,160,110).data;
-            let count = 0;
-            for(let p=3; p<pix.length; p+=256) if(pix[p] > 100) count++;
-            if(count < 5) {
-                can.style.display = 'none';
-                document.getElementById(`word-${i}`).classList.add('active');
-            }
-        }
-    }
-
-    // GLOBAL POINTER MOVE for Dragging
-    document.addEventListener('pointermove', (e) => {
-        if (!state.dragTarget) return;
-        moveAt(e.clientX, e.clientY);
+        <h1 style="color: var(--accent); margin-bottom: 10px;">Zen Emporium</h1>
+        <div class="stat-card" style="margin-bottom: 20px; color: var(--dark);">Bank: $<span id="shop-m">0</span></div>
         
-        // Visual feedback for buckets
-        document.querySelectorAll('.bucket').forEach(b => {
-            const bRect = b.getBoundingClientRect();
-            if(e.clientX > bRect.left && e.clientX < bRect.right && e.clientY > bRect.top && e.clientY < bRect.bottom) {
-                b.classList.add('highlight');
-            } else {
-                b.classList.remove('highlight');
-            }
-        });
-    });
-
-    document.addEventListener('pointerup', (e) => {
-        if (!state.dragTarget) return;
-        
-        const word = state.dragTarget;
-        const verb = word.dataset.verb;
-        const bucket = document.getElementById(`bucket-${verb}`);
-        const bRect = bucket.getBoundingClientRect();
-
-        // Check if dropped in correct bucket
-        if(e.clientX > bRect.left && e.clientX < bRect.right && e.clientY > bRect.top && e.clientY < bRect.bottom) {
-            state.money += state.pay;
-            document.getElementById(`st-${word.dataset.idx}`).style.visibility = 'hidden';
-            updateUI();
-            if([...document.querySelectorAll('.work-station')].every(s => s.style.visibility === 'hidden')) init();
-        }
-
-        word.classList.remove('dragging');
-        word.style.left = 'auto'; word.style.top = 'auto';
-        state.dragTarget = null;
-        document.querySelectorAll('.bucket').forEach(b => b.classList.remove('highlight'));
-    });
-
-    function moveAt(x, y) {
-        if(!state.dragTarget) return;
-        state.dragTarget.style.left = (x - 40) + 'px';
-        state.dragTarget.style.top = (y - 20) + 'px';
-    }
-
-    function toggleShop(o) {
-        document.getElementById('shop-overlay').style.display = o ? 'flex' : 'none';
-        renderShop();
-    }
-
-    function renderShop() {
-        document.getElementById('shop-m').innerText = state.money;
-        document.getElementById('shop-perm').innerHTML = `
-            <div class="shop-item"><h3>🚿 Nozzle</h3><p>Lvl ${state.lvls.area}</p><button class="buy-btn" onclick="buy('area')">$${state.costs.area}</button></div>
-            <div class="shop-item"><h3>🏗️ Floor</h3><p>Lvl ${state.lvls.expand}</p><button class="buy-btn" onclick="buy('expand')">$${state.costs.expand}</button></div>
-        `;
-    }
-
-    function buy(k) {
-        if(state.money >= state.costs[k]) {
-            state.money -= state.costs[k];
-            state.lvls[k]++;
-            if(k==='area') state.brush += 10;
-            if(k==='expand') state.tiles = Math.min(6, state.tiles + 1);
-            state.costs[k] = Math.floor(state.costs[k] * 2.2);
-            updateUI(); renderShop(); init();
-        }
-    }
-
-    function spawnBug() {
-        const bug = document.createElement('div');
-        bug.className = 'bug'; bug.innerText = '🪲';
-        bug.style.left = '-50px'; bug.style.top = (Math.random() * 70 + 10) + '%';
-        document.body.appendChild(bug);
-        const move = setInterval(() => {
-            let left = parseInt(bug.style.left);
-            bug.style.left = (left + 2) + 'px';
-            if(left > window.innerWidth) { clearInterval(move); bug.remove(); }
-        }, 30);
-        bug.onpointerdown = () => { state.money += 5; updateUI(); clearInterval(move); bug.remove(); };
-    }
-
-    function updateUI() {
-        document.getElementById('m-display').innerText = state.money;
-    }
-
-    init();
-    setInterval(spawnBug, 5000);
-</script>
-</body>
-</html>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('upgrades')">Upgrades</button>
+            <button class="tab-btn" onclick="switchTab('items')">Powerups</button>
